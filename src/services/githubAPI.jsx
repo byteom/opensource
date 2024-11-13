@@ -13,6 +13,7 @@ const initialRepositories = [
   { owner: 'byteom', repo: 'quiz-lab' },
   { owner: 'byteom', repo: 'my-portfolio' },
   {owner: 'vaishnavirajj', repo: 'Task-Management-Board'},
+    {owner: 'ankit071105', repo: 'Ticket-Booking'},
 ];
 
 // Fetch initial projects (repositories) details
