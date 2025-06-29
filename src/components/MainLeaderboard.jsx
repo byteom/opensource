@@ -45,17 +45,17 @@ function MainLeaderboard() {
     setLeaderboard(dummyData);
   }, []);
 
-  // --- 🔍 Search filter ---
+  // ---  Search filter ---
   const filteredLeaderboard = leaderboard.filter(user =>
     user.login.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // --- 🥇 Top 3 Performers ---
+  // --- Top 3 Performers ---
   const topPerformers = [...filteredLeaderboard]
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
-  // --- Pagination logic ---
+  // ---  Pagination logic ---
   const itemsPerPage = 10;
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
