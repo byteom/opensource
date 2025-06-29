@@ -109,6 +109,12 @@ function MainLeaderboard() {
 
       {error && <p className="text-red-500">{error}</p>}
 
+      {/* ✅ Total Contributors Count */}
+      <p className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4 text-center">
+        🔢 Total Contributors: {filteredLeaderboard.length}
+      </p>
+
+      {/* ⭐ Top Performers */}
       <div className="mb-6">
         <h3 className="text-xl font-semibold mb-4 dark:text-white">Top Performers</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -129,6 +135,7 @@ function MainLeaderboard() {
         </div>
       </div>
 
+      {/* 🔍 Search Input */}
       <input
         type="text"
         placeholder="Search by GitHub username"
@@ -137,6 +144,7 @@ function MainLeaderboard() {
         onChange={handleSearchChange}
       />
 
+      {/* 📊 Full Leaderboard Table */}
       <table className="w-full text-left bg-white dark:bg-gray-700 rounded shadow overflow-x-auto">
         <thead className="bg-gray-200 dark:bg-gray-600">
           <tr>
@@ -181,6 +189,7 @@ function MainLeaderboard() {
         </tbody>
       </table>
 
+      {/* ⏮️ Pagination Buttons */}
       <div className="mt-4 flex justify-between">
         <button
           onClick={handlePrevPage}
