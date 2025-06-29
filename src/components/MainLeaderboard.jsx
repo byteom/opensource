@@ -21,6 +21,7 @@ function MainLeaderboard() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState("score-desc");
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -47,11 +48,11 @@ function MainLeaderboard() {
           if (!uniqueUsers[user.login]) {
             uniqueUsers[user.login] = {
               ...user,
-              repo_count: new Set([user.project]),
+              repo_set: new Set([user.project]),
             };
           } else {
             uniqueUsers[user.login].pr_count += user.pr_count;
-            uniqueUsers[user.login].repo_count.add(user.project);
+            uniqueUsers[user.login].repo_set.add(user.project);
           }
         });
 
@@ -59,9 +60,8 @@ function MainLeaderboard() {
           .map((contributor) => ({
             ...contributor,
             score: contributor.pr_count * 10,
-            repo_count: contributor.repo_count.size,
+            repo_count: contributor.repo_set.size,
           }))
-          .sort((a, b) => b.score - a.score)
           .map((user, index) => ({ ...user, rank: index + 1 }));
 
         setLeaderboard(consolidatedLeaderboard);
@@ -76,30 +76,45 @@ function MainLeaderboard() {
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
+    setPage(1); // Reset to page 1 on new search
   };
 
-  const filteredLeaderboard = leaderboard.filter(user =>
-    user.login.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleSortChange = (event) => {
+    setSortOption(event.target.value);
+    setPage(1); // Reset to page 1 on new sort
+  };
+
+  // Sort logic
+  const sortData = (data) => {
+    switch (sortOption) {
+      case "score-asc":
+        return data.sort((a, b) => a.score - b.score);
+      case "score-desc":
+        return data.sort((a, b) => b.score - a.score);
+      case "prs-asc":
+        return data.sort((a, b) => a.pr_count - b.pr_count);
+      case "prs-desc":
+        return data.sort((a, b) => b.pr_count - a.pr_count);
+      case "repos-asc":
+        return data.sort((a, b) => a.repo_count - b.repo_count);
+      case "repos-desc":
+        return data.sort((a, b) => b.repo_count - a.repo_count);
+      default:
+        return data;
+    }
+  };
+
+  const filteredLeaderboard = sortData(
+    leaderboard.filter(user =>
+      user.login.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   const topPerformers = filteredLeaderboard.slice(0, 3);
-
   const itemsPerPage = 10;
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentPageLeaderboard = filteredLeaderboard.slice(startIndex, endIndex);
-
-  const handleNextPage = () => {
-    if (endIndex < filteredLeaderboard.length) {
-      setPage(page + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
-  };
 
   return (
     <section className="my-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md transition-all">
@@ -109,16 +124,34 @@ function MainLeaderboard() {
 
       {error && <p className="text-red-500">{error}</p>}
 
-      {/* ✅ Total Contributors Count */}
-      <p className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4 text-center">
-        🔢 Total Contributors: {filteredLeaderboard.length}
-      </p>
+      {/* Search + Sort */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+        <input
+          type="text"
+          placeholder="Search by GitHub username"
+          className="p-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300 w-full sm:w-1/2"
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+        <select
+          value={sortOption}
+          onChange={handleSortChange}
+          className="p-2 border border-gray-300 rounded w-full sm:w-1/2 focus:outline-none dark:bg-gray-700 dark:text-white"
+        >
+          <option value="score-desc">Sort by Score 🔽</option>
+          <option value="score-asc">Sort by Score 🔼</option>
+          <option value="prs-desc">Sort by PRs 🔽</option>
+          <option value="prs-asc">Sort by PRs 🔼</option>
+          <option value="repos-desc">Sort by Repos 🔽</option>
+          <option value="repos-asc">Sort by Repos 🔼</option>
+        </select>
+      </div>
 
-      {/* ⭐ Top Performers */}
+      {/* Top Performers */}
       <div className="mb-6">
         <h3 className="text-xl font-semibold mb-4 dark:text-white">Top Performers</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {topPerformers.length > 0 ? topPerformers.map((user) => (
+          {topPerformers.map((user) => (
             <div
               key={user.id}
               className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow text-center"
@@ -129,22 +162,11 @@ function MainLeaderboard() {
               <p className="text-gray-600 dark:text-gray-300">Badge: {user.badge}</p>
               <p className="text-gray-600 dark:text-gray-300">Repos: {user.repo_count}</p>
             </div>
-          )) : (
-            <p className="text-gray-500 dark:text-gray-300">No top performers yet.</p>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* 🔍 Search Input */}
-      <input
-        type="text"
-        placeholder="Search by GitHub username"
-        className="p-2 mb-4 w-full border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
-        value={searchQuery}
-        onChange={handleSearchChange}
-      />
-
-      {/* 📊 Full Leaderboard Table */}
+      {/* Leaderboard Table */}
       <table className="w-full text-left bg-white dark:bg-gray-700 rounded shadow overflow-x-auto">
         <thead className="bg-gray-200 dark:bg-gray-600">
           <tr>
@@ -189,17 +211,17 @@ function MainLeaderboard() {
         </tbody>
       </table>
 
-      {/* ⏮️ Pagination Buttons */}
+      {/* Pagination */}
       <div className="mt-4 flex justify-between">
         <button
-          onClick={handlePrevPage}
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
           disabled={page === 1}
           className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
         >
           Previous
         </button>
         <button
-          onClick={handleNextPage}
+          onClick={() => setPage((prev) => (endIndex < filteredLeaderboard.length ? prev + 1 : prev))}
           disabled={endIndex >= filteredLeaderboard.length}
           className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
         >
