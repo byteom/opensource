@@ -45,9 +45,13 @@ function MainLeaderboard() {
 
         flattenedData.forEach((user) => {
           if (!uniqueUsers[user.login]) {
-            uniqueUsers[user.login] = { ...user };
+            uniqueUsers[user.login] = {
+              ...user,
+              repo_count: new Set([user.project]),
+            };
           } else {
             uniqueUsers[user.login].pr_count += user.pr_count;
+            uniqueUsers[user.login].repo_count.add(user.project);
           }
         });
 
@@ -55,6 +59,7 @@ function MainLeaderboard() {
           .map((contributor) => ({
             ...contributor,
             score: contributor.pr_count * 10,
+            repo_count: contributor.repo_count.size,
           }))
           .sort((a, b) => b.score - a.score)
           .map((user, index) => ({ ...user, rank: index + 1 }));
@@ -116,6 +121,7 @@ function MainLeaderboard() {
               <p className="text-lg font-bold dark:text-white">{getRankEmoji(user.rank)} {user.login}</p>
               <p className="text-gray-600 dark:text-gray-300">Score: {user.score}</p>
               <p className="text-gray-600 dark:text-gray-300">Badge: {user.badge}</p>
+              <p className="text-gray-600 dark:text-gray-300">Repos: {user.repo_count}</p>
             </div>
           )) : (
             <p className="text-gray-500 dark:text-gray-300">No top performers yet.</p>
@@ -139,6 +145,7 @@ function MainLeaderboard() {
             <th className="p-2">GitHub Username</th>
             <th className="p-2">No. of PRs</th>
             <th className="p-2">Score</th>
+            <th className="p-2">Repos</th>
             <th className="p-2">Badge</th>
           </tr>
         </thead>
@@ -162,12 +169,13 @@ function MainLeaderboard() {
                 </td>
                 <td className="p-2">{user.pr_count}</td>
                 <td className="p-2">{user.score}</td>
+                <td className="p-2">{user.repo_count}</td>
                 <td className="p-2">{user.badge}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="6" className="p-4 text-center text-gray-500 dark:text-gray-300">No data available</td>
+              <td colSpan="7" className="p-4 text-center text-gray-500 dark:text-gray-300">No data available</td>
             </tr>
           )}
         </tbody>
