@@ -150,7 +150,16 @@ function MainLeaderboard() {
                 <td className="p-2">
                   <img src={user.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full" />
                 </td>
-                <td className="p-2">{user.login}</td>
+                <td className="p-2">
+                  <a
+                    href={`https://github.com/${user.login}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-300 hover:underline"
+                  >
+                    {user.login}
+                  </a>
+                </td>
                 <td className="p-2">{user.pr_count}</td>
                 <td className="p-2">{user.score}</td>
                 <td className="p-2">{user.badge}</td>
