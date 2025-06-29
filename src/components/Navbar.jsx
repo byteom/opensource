@@ -1,15 +1,43 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 function Navbar() {
   return (
     <nav className="bg-gray-800 p-4 text-white">
-      <div className="container mx-auto flex justify-between">
+      <div className="container mx-auto flex justify-between items-center">
         <span className="text-lg font-bold">GitHub Leaderboard</span>
-        <div>
-          <Link to="/" className="px-4">Home</Link>  {/* Link to the Home Page */}
-          <Link to="/projects" className="px-4">Projects</Link>
-          <Link to="/leaderboard" className="px-4">GitHub Leaderboard</Link>  {/* Link to GitHub Leaderboard */}
+        <div className="flex space-x-6">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              isActive
+                ? 'text-blue-400 border-b-2 border-blue-400 pb-1'
+                : 'hover:text-blue-300'
+            }
+          >
+            Home
+          </NavLink>
+
+          <NavLink
+            to="/projects"
+            className={({ isActive }) =>
+              isActive
+                ? 'text-blue-400 border-b-2 border-blue-400 pb-1'
+                : 'hover:text-blue-300'
+            }
+          >
+            Projects
+          </NavLink>
+
+          <NavLink
+            to="/leaderboard"
+            className={({ isActive }) =>
+              isActive
+                ? 'text-blue-400 border-b-2 border-blue-400 pb-1'
+                : 'hover:text-blue-300'
+            }
+          >
+            GitHub Leaderboard
+          </NavLink>
         </div>
       </div>
     </nav>
