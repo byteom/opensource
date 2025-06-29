@@ -20,7 +20,6 @@ function MainLeaderboard() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        // Fetch projects and contributors
         const projects = await githubAPI.getInitialProjects();
         const allContributors = await Promise.all(
           projects.map(async (project) => {
@@ -36,7 +35,7 @@ function MainLeaderboard() {
           })
         );
 
-        // Flatten the contributors data and remove duplicates
+        // Flatten and deduplicate
         const flattenedData = allContributors.flat();
         const uniqueUsers = {};
 
@@ -44,15 +43,14 @@ function MainLeaderboard() {
           if (!uniqueUsers[user.login]) {
             uniqueUsers[user.login] = { ...user };
           } else {
-            uniqueUsers[user.login].pr_count += user.pr_count; // Add PRs if user exists already
+            uniqueUsers[user.login].pr_count += user.pr_count;
           }
         });
 
-        // Convert the uniqueUsers object to an array
         const consolidatedLeaderboard = Object.values(uniqueUsers).map((contributor, index) => ({
           ...contributor,
           rank: index + 1,
-          score: contributor.pr_count * 10, // Example: Score based on PR count
+          score: contributor.pr_count * 10,
         }));
 
         setLeaderboard(consolidatedLeaderboard);
@@ -69,23 +67,19 @@ function MainLeaderboard() {
     setSearchQuery(event.target.value);
   };
 
-  // Filter leaderboard data based on the search query
-  const filteredLeaderboard = leaderboard.filter(user => 
+  const filteredLeaderboard = leaderboard.filter(user =>
     user.login.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Get top 3 performers dynamically based on search
   const topPerformers = filteredLeaderboard
-    .sort((a, b) => b.score - a.score) // Sort by score in descending order
-    .slice(0, 3); // Only top 3 performers
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
 
-  // Pagination logic
   const itemsPerPage = 10;
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentPageLeaderboard = filteredLeaderboard.slice(startIndex, endIndex);
 
-  // Handle pagination buttons
   const handleNextPage = () => {
     if (endIndex < filteredLeaderboard.length) {
       setPage(page + 1);
@@ -157,7 +151,17 @@ function MainLeaderboard() {
             ))
           ) : (
             <tr>
-              <td colSpan="6" className="p-4 text-center">No data available</td>
+              <td colSpan="6" className="p-4 text-center text-gray-600">
+                No contributors yet! 🚀<br />
+                <a
+                  href="https://github.com/byteom/leetcode-ai-assistant/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline"
+                >
+                  Start contributing to see your name here.
+                </a>
+              </td>
             </tr>
           )}
         </tbody>
