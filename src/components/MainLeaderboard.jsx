@@ -13,14 +13,12 @@ const assignBadge = (pr_count) => {
 function MainLeaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1); // Pagination state
-  const [searchQuery, setSearchQuery] = useState(""); // Search query for filtering users
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch the leaderboard data
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        // Fetch projects and contributors
         const projects = await githubAPI.getInitialProjects();
         const allContributors = await Promise.all(
           projects.map(async (project) => {
@@ -36,7 +34,6 @@ function MainLeaderboard() {
           })
         );
 
-        // Flatten the contributors data and remove duplicates
         const flattenedData = allContributors.flat();
         const uniqueUsers = {};
 
@@ -44,15 +41,14 @@ function MainLeaderboard() {
           if (!uniqueUsers[user.login]) {
             uniqueUsers[user.login] = { ...user };
           } else {
-            uniqueUsers[user.login].pr_count += user.pr_count; // Add PRs if user exists already
+            uniqueUsers[user.login].pr_count += user.pr_count;
           }
         });
 
-        // Convert the uniqueUsers object to an array
         const consolidatedLeaderboard = Object.values(uniqueUsers).map((contributor, index) => ({
           ...contributor,
           rank: index + 1,
-          score: contributor.pr_count * 10, // Example: Score based on PR count
+          score: contributor.pr_count * 10,
         }));
 
         setLeaderboard(consolidatedLeaderboard);
@@ -64,28 +60,23 @@ function MainLeaderboard() {
     fetchLeaderboard();
   }, []);
 
-  // Handle search input
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
   };
 
-  // Filter leaderboard data based on the search query
-  const filteredLeaderboard = leaderboard.filter(user => 
+  const filteredLeaderboard = leaderboard.filter(user =>
     user.login.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Get top 3 performers dynamically based on search
   const topPerformers = filteredLeaderboard
-    .sort((a, b) => b.score - a.score) // Sort by score in descending order
-    .slice(0, 3); // Only top 3 performers
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
 
-  // Pagination logic
   const itemsPerPage = 10;
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentPageLeaderboard = filteredLeaderboard.slice(startIndex, endIndex);
 
-  // Handle pagination buttons
   const handleNextPage = () => {
     if (endIndex < filteredLeaderboard.length) {
       setPage(page + 1);
@@ -103,7 +94,7 @@ function MainLeaderboard() {
       <h2 className="text-2xl font-bold mb-4">Main Leaderboard</h2>
       {error && <p className="text-red-500">{error}</p>}
 
-      {/* Top Performers Section */}
+      {/* Top Performers */}
       <div className="mb-4">
         <h3 className="text-xl font-semibold">Top Performers</h3>
         <div className="flex gap-6">
@@ -120,7 +111,7 @@ function MainLeaderboard() {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search */}
       <input
         type="text"
         placeholder="Search by GitHub username"
@@ -157,17 +148,41 @@ function MainLeaderboard() {
             ))
           ) : (
             <tr>
-              <td colSpan="6" className="p-4 text-center">No data available</td>
+              <td colSpan="6" className="p-4 text-center text-gray-600">
+                No contributors yet! 🚀<br />
+                <a
+                  href="https://github.com/byteom/leetcode-ai-assistant/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline"
+                >
+                  Start contributing to see your name here.
+                </a>
+              </td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {/* Pagination Buttons */}
-      <div className="mt-4 flex justify-between">
-        <button onClick={handlePrevPage} disabled={page === 1} className="p-2 bg-gray-200 rounded">Previous</button>
-        <button onClick={handleNextPage} disabled={endIndex >= filteredLeaderboard.length} className="p-2 bg-gray-200 rounded">Next</button>
-      </div>
+      {/* Pagination */}
+      {filteredLeaderboard.length > 0 && (
+        <div className="mt-4 flex justify-between">
+          <button
+            onClick={handlePrevPage}
+            disabled={page === 1}
+            className={`p-2 rounded ${page === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-gray-200'}`}
+          >
+            Previous
+          </button>
+          <button
+            onClick={handleNextPage}
+            disabled={endIndex >= filteredLeaderboard.length}
+            className={`p-2 rounded ${endIndex >= filteredLeaderboard.length ? 'bg-gray-300 cursor-not-allowed' : 'bg-gray-200'}`}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </section>
   );
 }
