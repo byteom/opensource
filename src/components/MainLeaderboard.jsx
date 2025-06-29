@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import githubAPI from '../services/githubAPI';
 
+// Dummy badge assignment (optional if you use badge from data)
 const assignBadge = (pr_count) => {
   if (pr_count > 20) return 'A';
   if (pr_count > 15) return 'B';
@@ -11,53 +11,51 @@ const assignBadge = (pr_count) => {
 
 function MainLeaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
-  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
 
- useEffect(() => {
-  const dummyData = [
-    {
-      id: 1,
-      login: "user1",
-      avatar_url: "https://avatars.githubusercontent.com/u/1?v=4",
-      pr_count: 10,
-      score: 100,
-      badge: "C"
-    },
-    {
-      id: 2,
-      login: "user2",
-      avatar_url: "https://avatars.githubusercontent.com/u/2?v=4",
-      pr_count: 15,
-      score: 150,
-      badge: "B"
-    },
-    {
-      id: 3,
-      login: "user3",
-      avatar_url: "https://avatars.githubusercontent.com/u/3?v=4",
-      pr_count: 5,
-      score: 50,
-      badge: "E"
-    }
-  ];
-  setLeaderboard(dummyData);
-}, []);
+  // --- Dummy data for styling/testing ---
+  useEffect(() => {
+    const dummyData = [
+      {
+        id: 1,
+        login: "user1",
+        avatar_url: "https://avatars.githubusercontent.com/u/1?v=4",
+        pr_count: 10,
+        score: 100,
+        badge: "C"
+      },
+      {
+        id: 2,
+        login: "user2",
+        avatar_url: "https://avatars.githubusercontent.com/u/2?v=4",
+        pr_count: 15,
+        score: 150,
+        badge: "B"
+      },
+      {
+        id: 3,
+        login: "user3",
+        avatar_url: "https://avatars.githubusercontent.com/u/3?v=4",
+        pr_count: 5,
+        score: 50,
+        badge: "E"
+      }
+    ];
+    setLeaderboard(dummyData);
+  }, []);
 
-
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
-
+  // --- 🔍 Search filter ---
   const filteredLeaderboard = leaderboard.filter(user =>
     user.login.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const topPerformers = filteredLeaderboard
+  // --- 🥇 Top 3 Performers ---
+  const topPerformers = [...filteredLeaderboard]
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
+  // --- Pagination logic ---
   const itemsPerPage = 10;
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -78,20 +76,21 @@ function MainLeaderboard() {
   return (
     <section id="leaderboard" className="my-8 p-4 bg-gray-100 rounded">
       <h2 className="text-2xl font-bold mb-4">Main Leaderboard</h2>
-      {error && <p className="text-red-500">{error}</p>}
 
       {/* Top Performers */}
       <div className="mb-4">
-        <h3 className="text-xl font-semibold">Top Performers</h3>
+        <h3 className="text-xl font-semibold mb-2">Top Performers</h3>
         <div className="flex gap-6 flex-wrap">
-          {topPerformers.length > 0 ? topPerformers.map((user, index) => (
-            <div key={user.id} className="flex flex-col items-center bg-white p-4 rounded shadow w-48">
-              <img src={user.avatar_url} alt={user.login} className="w-24 h-24 rounded-full mb-2" />
-              <p className="font-semibold">{index + 1}. {user.login}</p>
-              <p>Score: {user.score}</p>
-              <p>Badge: {user.badge}</p>
-            </div>
-          )) : (
+          {topPerformers.length > 0 ? (
+            topPerformers.map((user, index) => (
+              <div key={user.id} className="flex flex-col items-center bg-white p-4 rounded shadow">
+                <img src={user.avatar_url} alt={user.login} className="w-16 h-16 rounded-full" />
+                <p className="font-semibold">{index + 1}. {user.login}</p>
+                <p>Score: {user.score}</p>
+                <p>Badge: {user.badge}</p>
+              </div>
+            ))
+          ) : (
             <p>No top performers yet.</p>
           )}
         </div>
@@ -103,10 +102,10 @@ function MainLeaderboard() {
         placeholder="Search by GitHub username"
         className="p-2 mb-4 border rounded w-full max-w-md"
         value={searchQuery}
-        onChange={handleSearchChange}
+        onChange={(e) => setSearchQuery(e.target.value)}
       />
 
-      {/* Leaderboard Table */}
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left bg-white rounded shadow table-auto">
           <thead>
@@ -138,14 +137,9 @@ function MainLeaderboard() {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="p-4 text-center text-gray-600">
-                  No contributors yet! 🚀<br />
-                  <a
-                    href="https://github.com/byteom/leetcode-ai-assistant/issues"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 underline"
-                  >
+                <td colSpan="6" className="p-4 text-center">
+                  No contributors yet! <br />
+                  <a href="#projects" className="text-blue-500 underline">
                     Start contributing to see your name here.
                   </a>
                 </td>
@@ -155,20 +149,28 @@ function MainLeaderboard() {
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Buttons */}
       {filteredLeaderboard.length > 0 && (
         <div className="mt-4 flex justify-between">
           <button
             onClick={handlePrevPage}
             disabled={page === 1}
-            className={`p-2 rounded ${page === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-gray-200'}`}
+            className={`p-2 px-4 rounded border text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 transition ${
+              page === 1
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
             Previous
           </button>
           <button
             onClick={handleNextPage}
             disabled={endIndex >= filteredLeaderboard.length}
-            className={`p-2 rounded ${endIndex >= filteredLeaderboard.length ? 'bg-gray-300 cursor-not-allowed' : 'bg-gray-200'}`}
+            className={`p-2 px-4 rounded border text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 transition ${
+              endIndex >= filteredLeaderboard.length
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
             Next
           </button>
