@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-// Dummy badge assignment (optional if you use badge from data)
+// Dummy badge assignment
 const assignBadge = (pr_count) => {
   if (pr_count > 20) return 'A';
   if (pr_count > 15) return 'B';
@@ -14,38 +14,54 @@ function MainLeaderboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
 
-  // --- Dummy data for styling/testing ---
-  useEffect(() => {
-    const dummyData = [
-      {
-        id: 1,
-        login: "user1",
-        avatar_url: "https://avatars.githubusercontent.com/u/1?v=4",
-        pr_count: 10,
-        score: 100,
-        badge: "C"
-      },
-      {
-        id: 2,
-        login: "user2",
-        avatar_url: "https://avatars.githubusercontent.com/u/2?v=4",
-        pr_count: 15,
-        score: 150,
-        badge: "B"
-      },
-      {
-        id: 3,
-        login: "user3",
-        avatar_url: "https://avatars.githubusercontent.com/u/3?v=4",
-        pr_count: 5,
-        score: 50,
-        badge: "E"
-      }
-    ];
-    setLeaderboard(dummyData);
-  }, []);
+  // --- Dummy data for testing ---
+useEffect(() => {
+  const fetchLeaderboard = async () => {
+    try {
+      const projects = await githubAPI.getInitialProjects();
+      const allContributors = await Promise.all(
+        projects.map(async (project) => {
+          const contributors = await githubAPI.getContributors(project.owner.login, project.name);
+          return contributors.map((contributor) => ({
+            id: contributor.id,
+            login: contributor.login,
+            avatar_url: contributor.avatar_url,
+            pr_count: contributor.contributions,
+            project: project.name,
+            badge: assignBadge(contributor.contributions),
+          }));
+        })
+      );
 
-  // ---  Search filter ---
+      // Flatten and deduplicate
+      const flattenedData = allContributors.flat();
+      const uniqueUsers = {};
+
+      flattenedData.forEach((user) => {
+        if (!uniqueUsers[user.login]) {
+          uniqueUsers[user.login] = { ...user };
+        } else {
+          uniqueUsers[user.login].pr_count += user.pr_count;
+        }
+      });
+
+      const consolidatedLeaderboard = Object.values(uniqueUsers).map((contributor, index) => ({
+        ...contributor,
+        rank: index + 1,
+        score: contributor.pr_count * 10,
+      }));
+
+      setLeaderboard(consolidatedLeaderboard);
+    } catch (err) {
+      console.error("Error fetching leaderboard:", err);
+      setError("Failed to load leaderboard data.");
+    }
+  };
+  fetchLeaderboard();
+}, []);
+
+
+  // --- Filter based on search query ---
   const filteredLeaderboard = leaderboard.filter(user =>
     user.login.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -55,7 +71,7 @@ function MainLeaderboard() {
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
-  // ---  Pagination logic ---
+  // --- Pagination logic ---
   const itemsPerPage = 10;
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -96,13 +112,19 @@ function MainLeaderboard() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search Input with Tooltip */}
       <input
         type="text"
         placeholder="Search by GitHub username"
         className="p-2 mb-4 border rounded w-full max-w-md"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
+        disabled={filteredLeaderboard.length === 0}
+        title={
+          filteredLeaderboard.length === 0
+            ? "Search will be available once contributor data is loaded."
+            : ""
+        }
       />
 
       {/* Table */}
@@ -138,7 +160,7 @@ function MainLeaderboard() {
             ) : (
               <tr>
                 <td colSpan="6" className="p-4 text-center">
-                  No contributors yet! <br />
+                  No contributors yet! 🚀<br />
                   <a href="#projects" className="text-blue-500 underline">
                     Start contributing to see your name here.
                   </a>
