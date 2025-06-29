@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import githubAPI from '../services/githubAPI';
 
-// Helper function to assign badges based on PR count
 const assignBadge = (pr_count) => {
   if (pr_count > 20) return 'A';
   if (pr_count > 15) return 'B';
@@ -10,17 +9,22 @@ const assignBadge = (pr_count) => {
   return 'E';
 };
 
+const getRankEmoji = (rank) => {
+  if (rank === 1) return '🥇';
+  if (rank === 2) return '🥈';
+  if (rank === 3) return '🥉';
+  return `#${rank}`;
+};
+
 function MainLeaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1); // Pagination state
-  const [searchQuery, setSearchQuery] = useState(""); // Search query for filtering users
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch the leaderboard data
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        // Fetch projects and contributors
         const projects = await githubAPI.getInitialProjects();
         const allContributors = await Promise.all(
           projects.map(async (project) => {
@@ -36,7 +40,6 @@ function MainLeaderboard() {
           })
         );
 
-        // Flatten the contributors data and remove duplicates
         const flattenedData = allContributors.flat();
         const uniqueUsers = {};
 
@@ -44,16 +47,17 @@ function MainLeaderboard() {
           if (!uniqueUsers[user.login]) {
             uniqueUsers[user.login] = { ...user };
           } else {
-            uniqueUsers[user.login].pr_count += user.pr_count; // Add PRs if user exists already
+            uniqueUsers[user.login].pr_count += user.pr_count;
           }
         });
 
-        // Convert the uniqueUsers object to an array
-        const consolidatedLeaderboard = Object.values(uniqueUsers).map((contributor, index) => ({
-          ...contributor,
-          rank: index + 1,
-          score: contributor.pr_count * 10, // Example: Score based on PR count
-        }));
+        const consolidatedLeaderboard = Object.values(uniqueUsers)
+          .map((contributor) => ({
+            ...contributor,
+            score: contributor.pr_count * 10,
+          }))
+          .sort((a, b) => b.score - a.score)
+          .map((user, index) => ({ ...user, rank: index + 1 }));
 
         setLeaderboard(consolidatedLeaderboard);
       } catch (err) {
@@ -61,31 +65,25 @@ function MainLeaderboard() {
         setError("Failed to load leaderboard data.");
       }
     };
+
     fetchLeaderboard();
   }, []);
 
-  // Handle search input
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
   };
 
-  // Filter leaderboard data based on the search query
-  const filteredLeaderboard = leaderboard.filter(user => 
+  const filteredLeaderboard = leaderboard.filter(user =>
     user.login.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Get top 3 performers dynamically based on search
-  const topPerformers = filteredLeaderboard
-    .sort((a, b) => b.score - a.score) // Sort by score in descending order
-    .slice(0, 3); // Only top 3 performers
+  const topPerformers = filteredLeaderboard.slice(0, 3);
 
-  // Pagination logic
   const itemsPerPage = 10;
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentPageLeaderboard = filteredLeaderboard.slice(startIndex, endIndex);
 
-  // Handle pagination buttons
   const handleNextPage = () => {
     if (endIndex < filteredLeaderboard.length) {
       setPage(page + 1);
@@ -99,39 +97,42 @@ function MainLeaderboard() {
   };
 
   return (
-    <section id="leaderboard" className="my-8 p-4 bg-gray-100 rounded">
-      <h2 className="text-2xl font-bold mb-4">Main Leaderboard</h2>
+    <section className="my-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md transition-all">
+      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-white">
+        Main Leaderboard
+      </h2>
+
       {error && <p className="text-red-500">{error}</p>}
 
-      {/* Top Performers Section */}
-      <div className="mb-4">
-        <h3 className="text-xl font-semibold">Top Performers</h3>
-        <div className="flex gap-6">
-          {topPerformers.length > 0 ? topPerformers.map((user, index) => (
-            <div key={user.id} className="flex flex-col items-center">
-              <img src={user.avatar_url} alt={user.login} className="w-24 h-24 rounded-full" />
-              <p>{index + 1}. {user.login}</p>
-              <p>Score: {user.score}</p>
-              <p>Badge: {user.badge}</p>
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold mb-4 dark:text-white">Top Performers</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {topPerformers.length > 0 ? topPerformers.map((user) => (
+            <div
+              key={user.id}
+              className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow text-center"
+            >
+              <img src={user.avatar_url} alt={user.login} className="w-20 h-20 rounded-full mx-auto mb-2" />
+              <p className="text-lg font-bold dark:text-white">{getRankEmoji(user.rank)} {user.login}</p>
+              <p className="text-gray-600 dark:text-gray-300">Score: {user.score}</p>
+              <p className="text-gray-600 dark:text-gray-300">Badge: {user.badge}</p>
             </div>
           )) : (
-            <p>No top performers yet.</p>
+            <p className="text-gray-500 dark:text-gray-300">No top performers yet.</p>
           )}
         </div>
       </div>
 
-      {/* Search Bar */}
       <input
         type="text"
         placeholder="Search by GitHub username"
-        className="p-2 mb-4 border rounded"
+        className="p-2 mb-4 w-full border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
         value={searchQuery}
         onChange={handleSearchChange}
       />
 
-      {/* Leaderboard Table */}
-      <table className="w-full text-left bg-white rounded shadow">
-        <thead>
+      <table className="w-full text-left bg-white dark:bg-gray-700 rounded shadow overflow-x-auto">
+        <thead className="bg-gray-200 dark:bg-gray-600">
           <tr>
             <th className="p-2">Rank</th>
             <th className="p-2">Avatar</th>
@@ -144,8 +145,8 @@ function MainLeaderboard() {
         <tbody>
           {currentPageLeaderboard.length > 0 ? (
             currentPageLeaderboard.map((user, index) => (
-              <tr key={user.id} className="border-b">
-                <td className="p-2">{(page - 1) * itemsPerPage + index + 1}</td>
+              <tr key={user.id} className="border-b border-gray-200 dark:border-gray-600">
+                <td className="p-2">{getRankEmoji((page - 1) * itemsPerPage + index + 1)}</td>
                 <td className="p-2">
                   <img src={user.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full" />
                 </td>
@@ -157,16 +158,27 @@ function MainLeaderboard() {
             ))
           ) : (
             <tr>
-              <td colSpan="6" className="p-4 text-center">No data available</td>
+              <td colSpan="6" className="p-4 text-center text-gray-500 dark:text-gray-300">No data available</td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {/* Pagination Buttons */}
       <div className="mt-4 flex justify-between">
-        <button onClick={handlePrevPage} disabled={page === 1} className="p-2 bg-gray-200 rounded">Previous</button>
-        <button onClick={handleNextPage} disabled={endIndex >= filteredLeaderboard.length} className="p-2 bg-gray-200 rounded">Next</button>
+        <button
+          onClick={handlePrevPage}
+          disabled={page === 1}
+          className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+        >
+          Previous
+        </button>
+        <button
+          onClick={handleNextPage}
+          disabled={endIndex >= filteredLeaderboard.length}
+          className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+        >
+          Next
+        </button>
       </div>
     </section>
   );
